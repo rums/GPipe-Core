@@ -1,3 +1,44 @@
+# Changelog for GPipe-Core Fork
+
+## v2.4.1-fork1 (2025-01-27) - Community Fork Release
+
+### 🎉 **Fork Initialization**
+This is the first release of the community-maintained GPipe-Core fork, updated for LTS-21+ compatibility.
+
+### ✅ **Dependency Updates** 
+- **BREAKING**: Updated `base` bounds from `>= 4.9 && < 5` to `>= 4.16 && < 5`
+  - Now requires GHC 9.2+ (LTS-21+)
+- **BREAKING**: Updated `transformers` bounds from `>= 0.5.2 && < 0.6` to `>= 0.5 && < 0.7`
+- Updated `containers` bounds from `>= 0.5 && < 0.7` to `>= 0.5 && < 0.8`
+
+### 🔧 **Repository Updates**
+- Updated homepage URL to point to fork repository
+- Updated maintainer information for community fork
+- Added comprehensive GitHub Actions CI pipeline
+- Updated documentation to reflect fork status
+
+### 📦 **Build System**
+- Updated stack.yaml to use LTS-21.25
+- Verified compatibility with current Stackage LTS
+- Added CI matrix testing across:
+  - Platforms: Ubuntu, Windows, macOS  
+  - GHC versions: 9.2, 9.4, 9.6
+  - Build tools: Cabal and Stack
+
+### 🎯 **Migration Path**
+- **From upstream GPipe 2.2.5**: Update dependency bounds in your project
+- **API Compatibility**: No breaking API changes - drop-in replacement
+- **Version Strategy**: Using `upstream.version-forkN` scheme
+
+### 📖 **Documentation**
+- Updated README with fork rationale and setup instructions
+- Added maintenance guidelines and support information  
+- Preserved original GPipe tutorials and documentation links
+
+---
+
+# Original GPipe-Core Changelog
+
 ### 2.2.5
 
 - Support for GHC 8.8.3

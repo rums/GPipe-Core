@@ -1,0 +1,118 @@
+name: GPipe Fork CI
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  schedule:
+    # Nightly builds to catch GHC head issues early
+    - cron: '0 2 * * *'
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }} with GHC ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        ghc: ['9.2', '9.4', '9.6']
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Haskell
+      uses: haskell/actions/setup@v2
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: 'latest'
+        enable-stack: true
+        stack-version: 'latest'
+        
+    - name: Cache Cabal packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cabal
+        key: ${{ runner.os }}-${{ matrix.ghc }}-cabal-${{ hashFiles('**/cabal.project.freeze') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.ghc }}-cabal-
+          
+    - name: Cache Stack packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-${{ matrix.ghc }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.ghc }}-stack-
+          
+    - name: Build with Cabal
+      run: |
+        cd GPipe-Core
+        cabal update
+        cabal build --enable-tests --enable-benchmarks
+        
+    - name: Build with Stack
+      run: |
+        cd GPipe-Core
+        stack build --test --no-run-tests
+        
+    - name: Run tests (Cabal)
+      run: |
+        cd GPipe-Core
+        cabal test --enable-tests
+        
+    - name: Run tests (Stack)
+      run: |
+        cd GPipe-Core
+        stack test
+        
+    - name: Build documentation
+      run: |
+        cd GPipe-Core
+        cabal haddock --enable-doc-index
+        
+    - name: Check lower bounds
+      if: matrix.ghc == '9.2' && matrix.os == 'ubuntu-latest'
+      run: |
+        cd GPipe-Core
+        cabal build --prefer-oldest --enable-tests --enable-benchmarks
+        
+  validate-fork:
+    name: Validate Fork Status
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check version format
+      run: |
+        cd GPipe-Core
+        VERSION=$(grep "^version:" GPipe.cabal | sed 's/version: *//')
+        echo "Version: $VERSION"
+        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-fork[0-9]+$ ]]; then
+          echo "❌ Version must follow format: x.y.z-forkN"
+          exit 1
+        fi
+        echo "✅ Version format is correct"
+        
+    - name: Validate maintainer info
+      run: |
+        cd GPipe-Core
+        MAINTAINER=$(grep "^maintainer:" GPipe.cabal | sed 's/maintainer: *//')
+        if [[ "$MAINTAINER" == *"Tobias Bexelius"* ]]; then
+          echo "❌ Maintainer should be updated for fork"
+          exit 1
+        fi
+        echo "✅ Maintainer info updated for fork"
+        
+    - name: Check homepage URL
+      run: |
+        cd GPipe-Core
+        HOMEPAGE=$(grep "^homepage:" GPipe.cabal | sed 's/homepage: *//')
+        if [[ "$HOMEPAGE" == *"tobbebex"* ]]; then
+          echo "❌ Homepage should point to fork repository"
+          exit 1
+        fi
+        echo "✅ Homepage points to fork repository" 
